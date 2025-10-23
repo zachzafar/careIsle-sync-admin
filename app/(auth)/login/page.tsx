@@ -20,6 +20,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const router = useRouter()
 
+  console.log(process.env.NEXT_PUBLIC_API_URL)
+
   const { mutate, isPending } = tsr.auth.login.useMutation({
     onSuccess: async (data) => {
       if (data.status === 200) {
