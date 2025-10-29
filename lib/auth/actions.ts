@@ -32,21 +32,32 @@ export async function refreshAccessTokenServer(): Promise<{
   accessToken?: string
   refreshToken?: string
 }> {
+  console.log("refreshing token getting cookie")
   const refreshToken = await getRefreshTokenCookie()
 
   if (!refreshToken) {
     return { success: false }
   }
 
+  console.log("refreshing token sending request ")
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    })
+    const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
-    if (response.ok) {
-      const data = await response.json()
+    const url = `${apiURL}/refresh`
+    const payload = { refreshToken }
+    const requestHeaders = { "Content-Type": "application/json", "Accept": "application/json" }
+
+    // Debug: log the outgoing request details
+    console.debug("[auth] Refresh token request", { url, payload, headers: requestHeaders })
+
+    const axios = (await import("axios")).default
+    const response = await axios.post(url, payload, { headers: requestHeaders })
+
+    // Debug: log the response details
+    console.debug("[auth] Refresh token response", { status: response.status, data: response.data })
+
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.data
 
       // Set new refresh token cookie
       await setRefreshTokenCookie(data.refreshToken)
@@ -61,8 +72,17 @@ export async function refreshAccessTokenServer(): Promise<{
     // Clear cookie on failure
     await clearRefreshTokenCookie()
     return { success: false }
-  } catch (error) {
-    console.error("[v0] Token refresh failed:", error)
+  } catch (error: any) {
+    // Extra debugging for axios-style errors
+    if (error?.response) {
+      console.error("[auth] Refresh token axios error", {
+        status: error.response.status,
+        data: error.response.data,
+      })
+    } else {
+      console.error("[v0] Token refresh failed:", error)
+    }
+
     await clearRefreshTokenCookie()
     return { success: false }
   }

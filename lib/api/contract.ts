@@ -107,7 +107,7 @@ export const contract = c.router({
       method: "POST",
       path: "/login",
       responses: {
-        200: AuthResponseDto,
+        201: AuthResponseDto,
       },
       body: LoginDto,
       summary: "Login",

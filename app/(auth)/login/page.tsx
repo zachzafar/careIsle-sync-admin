@@ -20,9 +20,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const router = useRouter()
 
+  console.log(process.env.NEXT_PUBLIC_API_URL)
+
   const { mutate, isPending } = tsr.auth.login.useMutation({
     onSuccess: async (data) => {
-      if (data.status === 200) {
+      if (data.status === 201) {
         setAccessToken(data.body.token)
         await setRefreshTokenCookie(data.body.refreshToken)
 
@@ -41,6 +43,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log(email,password)
     mutate({ body: { email, password } })
   }
 

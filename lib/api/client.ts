@@ -1,8 +1,56 @@
 import { initClient } from "@ts-rest/core"
 import { contract } from "./contract"
 import { getAccessToken, refreshAccessToken } from "../auth/token"
+import axios, { AxiosError, AxiosResponse, isAxiosError, Method } from "axios"
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+
+// Create a normalized axios instance with interceptors
+
+const axiosInstance = axios.create({
+  baseURL: baseUrl,
+  headers: {
+    "Accept": "application/json",
+  },
+})
+
+axiosInstance.interceptors.request.use(async (config) => {
+  const token = getAccessToken()
+  if (token) {
+        config.headers = new axios.AxiosHeaders({
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        });
+
+        if (config.data instanceof FormData) {
+          console.log(config.data)
+          config.headers['Content-Type'] = "multipart/form-data"
+        }
+      }
+  
+      return config
+})
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error?.config
+    if (error?.response?.status === 401 && config && !(config as any).sent) {
+      ;(config as any).sent = true
+      const refreshed = await refreshAccessToken()
+      if (!refreshed) {
+        return Promise.reject(error)
+      }
+      const newToken = getAccessToken()
+      config.headers = {
+        ...config.headers,
+        Authorization: newToken ? `Bearer ${newToken}` : undefined,
+      }
+      return axiosInstance.request(config)
+    }
+    return Promise.reject(error)
+  }
+)
 
 export const apiClient = initClient(contract, {
   baseUrl,
@@ -20,41 +68,47 @@ export const apiClient = initClient(contract, {
     }
 
     try {
-      const response = await fetch(`${baseUrl}${path}`, {
-        method,
+
+
+      const result = await axiosInstance.request({
+        method: method as Method,
+        url: path,
         headers: requestHeaders,
-        body: body ? JSON.stringify(body) : undefined,
+        data: body,
       })
 
-      // Handle 401 - try to refresh token
-      if (response.status === 401 && token) {
-        const refreshed = await refreshAccessToken()
-        if (refreshed) {
-          // Retry request with new token
-          requestHeaders["Authorization"] = `Bearer ${getAccessToken()}`
-          const retryResponse = await fetch(`${baseUrl}${path}`, {
-            method,
-            headers: requestHeaders,
-            body: body ? JSON.stringify(body) : undefined,
+      const headersObj = new Headers()
+      Object.entries(result.headers ?? {}).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          headersObj.append(key, Array.isArray(value) ? value.join(", ") : String(value))
+        }
+      })
+
+      return {
+        status: result.status,
+        body: result.status !== 204 ? result.data : null,
+        headers: headersObj,
+      }
+    } catch (e: Error | AxiosError | any) {
+      if (isAxiosError(e)) {
+        const response = (e as AxiosError).response as AxiosResponse | undefined
+        if (response) {
+          const headersObj = new Headers()
+          Object.entries(response.headers ?? {}).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              headersObj.append(key, Array.isArray(value) ? value.join(", ") : String(value))
+            }
           })
+
           return {
-            status: retryResponse.status,
-            body: await retryResponse.json(),
-            headers: retryResponse.headers,
+            status: response.status,
+            body: response.status !== 204 ? response.data : null,
+            headers: headersObj,
           }
         }
       }
-
-      const responseBody = response.status !== 204 ? await response.json() : null
-
-      return {
-        status: response.status,
-        body: responseBody,
-        headers: response.headers,
-      }
-    } catch (error) {
-      console.error("[v0] API request failed:", error)
-      throw error
+      console.error("[v0] API request failed:", e)
+      throw e
     }
   },
 })

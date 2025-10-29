@@ -33,6 +33,7 @@ export function FacilityForm({ facility, isEdit }: FacilityFormProps) {
     api_key: facility?.api_credentials.api_key || "",
     token_url: facility?.api_credentials.token_url || "",
     webhook_secret: facility?.webhook_secret || "",
+    refresh_token: facility?.api_credentials.refresh_token || "",
   })
 
   const createMutation = tsr.facilities.create.useMutation({
@@ -96,6 +97,7 @@ export function FacilityForm({ facility, isEdit }: FacilityFormProps) {
       apiCredentials.client_id = formData.client_id
       apiCredentials.client_secret = formData.client_secret
       apiCredentials.token_url = formData.token_url
+      apiCredentials.refresh_token = formData.refresh_token
     } else if (formData.credentialType === "apikey") {
       apiCredentials.api_key = formData.api_key
     }
@@ -217,6 +219,15 @@ export function FacilityForm({ facility, isEdit }: FacilityFormProps) {
                   id="token_url"
                   value={formData.token_url}
                   onChange={(e) => setFormData({ ...formData, token_url: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="refresh_token">Refresh Token</Label>
+                <Input
+                  id="refresh_token"
+                  type="password"
+                  value={formData.refresh_token}
+                  onChange={(e) => setFormData({ ...formData, refresh_token: e.target.value })}
                 />
               </div>
             </>

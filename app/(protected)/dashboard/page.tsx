@@ -54,7 +54,7 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Welcome to the Health Portal administration dashboard</p>
+          <p className="text-muted-foreground mt-2">Welcome to the Health Portal administration Dashboard</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
