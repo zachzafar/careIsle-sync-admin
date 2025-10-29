@@ -16,6 +16,7 @@ export default function RegisterAdminPage() {
   const [email, setEmail] = useState("")
   const [firstname, setFirstname] = useState("")
   const [lastname, setLastname] = useState("")
+  const [password, setPassword] = useState("")
   const [adminId, setAdminId] = useState<string | null>(null)
 
   const { mutate, isPending } = tsr.auth.registerAdmin.useMutation({
@@ -36,7 +37,7 @@ export default function RegisterAdminPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    mutate({ body: { email, firstname, lastname } })
+    mutate({ body: { email, firstname, lastname, password } })
   }
 
   if (adminId) {
@@ -98,6 +99,16 @@ export default function RegisterAdminPage() {
                 placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>

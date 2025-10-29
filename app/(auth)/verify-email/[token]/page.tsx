@@ -21,8 +21,8 @@ export default function VerifyEmailPage() {
           params: { token },
           body: {},
         })
-
-        if (response.status === 200) {
+        console.log(" Email verification response:", response)
+        if (response.status === 201) {
           setStatus("success")
           setMessage(response.body.message || "Email verified successfully")
         } else {
@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
           setMessage("Verification failed. The link may be invalid or expired.")
         }
       } catch (error) {
-        console.error("[v0] Email verification error:", error)
+        console.error(" Email verification error:", error)
         setStatus("error")
         setMessage("An error occurred during verification")
       }
