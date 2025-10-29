@@ -134,7 +134,7 @@ export const contract = c.router({
       path: "/verify-email/:token",
       pathParams: z.object({ token: z.string() }),
       responses: {
-        200: z.object({ message: z.string() }),
+        201: z.object({ message: z.string() }),
       },
       body: z.object({}),
       summary: "Verify Email",
