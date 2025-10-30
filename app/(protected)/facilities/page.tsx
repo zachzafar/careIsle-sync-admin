@@ -70,7 +70,7 @@ export default function FacilitiesPage() {
     },
   })
 
-  const facilities = data?.status === 200 ? data.body : []
+  const facilities = data?.body || []
 
   const filteredFacilities = facilities?.filter(
     (facility) =>

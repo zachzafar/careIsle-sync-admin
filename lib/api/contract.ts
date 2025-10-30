@@ -101,6 +101,17 @@ const PatientDto = z.object({
   demographics: z.record(z.any()),
 })
 
+const PaginationMetaDto = z.object({
+  total: z.number().int().nonnegative(),
+  page: z.number().int().min(1),
+  limit: z.number().int().min(1).max(100),
+  totalPages: z.number().int().min(0),
+  hasNextPage: z.boolean(),
+  hasPrevPage: z.boolean(),
+  sort: z.enum(["createdAt", "updatedAt", "first_name", "last_name", "dob", "system_id"]),
+  order: z.enum(["asc", "desc"]),
+})
+
 // Top-level zod DTO additions
 const BulkUploadFromFacilityDto = z.object({
   facility_id: z.string(),
@@ -273,8 +284,19 @@ export const contract = c.router({
     getAll: {
       method: "GET",
       path: "/patients",
+      // Accept pagination/sorting query params
+      query: z.object({
+        page: z.coerce.number().int().min(1).default(1),
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        sort: z.enum(["createdAt", "updatedAt", "first_name", "last_name", "dob", "system_id"]).default("createdAt"),
+        order: z.enum(["asc", "desc"]).default("desc"),
+      }),
       responses: {
-        200: z.array(PatientDto),
+        // Return data + meta per new contract
+        200: z.object({
+          data: z.array(PatientDto),
+          meta: PaginationMetaDto,
+        }),
       },
       summary: "Get All Patients",
     },
@@ -297,3 +319,4 @@ export type CreatePatientType = z.infer<typeof CreatePatientDto>
 // Add exported types for new DTOs
 export type BulkUploadFromFacilityDtoType = z.infer<typeof BulkUploadFromFacilityDto>
 export type MergePatientsDtoType = z.infer<typeof MergePatientsDto>
+

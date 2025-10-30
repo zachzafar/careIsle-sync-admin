@@ -23,6 +23,17 @@ export function clearAccessToken() {
   }
 }
 
+let refreshInFlight: Promise<boolean> | null = null
+
+export async function refreshAccessTokenSingleton(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshAccessToken().finally(() => {
+      refreshInFlight = null
+    })
+  }
+  return refreshInFlight
+}
+
 export async function refreshAccessToken(): Promise<boolean> {
   try {
     const { refreshAccessTokenServer } = await import("./actions")
