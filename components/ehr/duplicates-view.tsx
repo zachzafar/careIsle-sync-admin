@@ -22,12 +22,13 @@ export function DuplicatesView(props: {
   const [facilityId, setFacilityId] = React.useState<string>("")
 
   const { data: duplicatesResponse, isPending, status, error } = tsr.ehr.getDuplicates.useQuery(
-    facilityId
-      ? {
-          queryKey: ["ehr", "duplicates", facilityId],
-          params: { facility_id: facilityId },
-        }
-      : null as any
+    {
+      queryKey: ["ehr", "duplicates", facilityId],
+      queryData: {
+        params: { facility_id: facilityId },
+      },
+      enabled: !!facilityId,
+    } 
   ) 
 
   const duplicates = duplicatesResponse?.body ?? {}
