@@ -86,12 +86,20 @@ export default function FacilitiesPage() {
             <h1 className="text-3xl font-bold tracking-tight">Facilities</h1>
             <p className="text-muted-foreground mt-2">Manage healthcare facilities and EHR integrations</p>
           </div>
-          <Button asChild>
-            <Link href="/facilities/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Facility
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild>
+              <Link href="/facilities/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Facility
+              </Link>
+            </Button>
+            {/* Link to EHR bulk upload page */}
+            <Button variant="secondary" asChild>
+              <Link href="/patients/ehr-bulk-upload">
+                Bulk Upload
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-4">

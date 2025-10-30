@@ -101,7 +101,87 @@ const PatientDto = z.object({
   demographics: z.record(z.any()),
 })
 
+// Top-level zod DTO additions
+const BulkUploadFromFacilityDto = z.object({
+  facility_id: z.string(),
+})
+
+const MergeInfoDto = z.object({
+  primary_patient_id: z.string(),
+  secondary_patient_ids: z.string(),
+})
+
+const MergePatientsDto = z.object({
+  merge_info: z.array(MergeInfoDto),
+})
+
+// API responses
+const BulkUploadResponseDto = z.object({
+  message: z.string(),
+  facilityId: z.string(),
+  status: z.enum(["processing"]),
+  startedAt: z.string(), // ISODateString
+})
+
+// Duplicates return a record keyed by syncable primary patient id, value is array of potential duplicate patients.
+// We reuse PatientDto.partial() to keep it flexible and avoid mismatches if backend adds fields.
+const DuplicatesResponseDto = z.record(z.array(PatientDto.partial()))
+
+const UpdateCanSyncDto = z.object({
+  facility_id: z.string(),
+  can_sync: z.boolean(),
+})
+
+const UpdateCanSyncResponseDto = z.object({
+  facility_id: z.string(),
+  can_sync: z.boolean(),
+  message: z.string().optional(),
+})
+
 export const contract = c.router({
+  ehr: {
+    bulkUploadFromFacility: {
+      method: "POST",
+      path: "/ehr/bulk-upload-from-facility",
+      body: BulkUploadFromFacilityDto,
+      responses: {
+        201: BulkUploadResponseDto,
+      },
+      summary: "Start bulk upload for a facility",
+    },
+    merge: {
+      method: "POST",
+      path: "/ehr/merge",
+      body: MergePatientsDto,
+      responses: {
+        // Backend returns a merge log; we model success/failed arrays using the MergeInfo shape for visibility.
+        201: z.object({
+          successful: z.array(MergeInfoDto),
+          failed: z.array(MergeInfoDto),
+        }),
+      },
+      summary: "Merge duplicate patients",
+    },
+    getDuplicates: {
+      method: "GET",
+      path: "/ehr/duplicates/:facility_id",
+      pathParams: z.object({ facility_id: z.string() }),
+      responses: {
+        200: DuplicatesResponseDto,
+      },
+      summary: "Get duplicate groups for a facility",
+    },
+    updateCanSync: {
+      method: "PUT",
+      path: "/ehr/update-can-sync",
+      body: UpdateCanSyncDto,
+      responses: {
+        200: UpdateCanSyncResponseDto,
+        // Backend may throw validation errors if duplicates exist; ts-rest will surface non-2xx statuses.
+      },
+      summary: "Update facility can_sync flag",
+    },
+  },
   auth: {
     login: {
       method: "POST",
@@ -214,3 +294,6 @@ export type AuthResponse = z.infer<typeof AuthResponseDto>
 export type FacilityType = z.infer<typeof FacilityDto>
 export type PatientType = z.infer<typeof PatientDto>
 export type CreatePatientType = z.infer<typeof CreatePatientDto>
+// Add exported types for new DTOs
+export type BulkUploadFromFacilityDtoType = z.infer<typeof BulkUploadFromFacilityDto>
+export type MergePatientsDtoType = z.infer<typeof MergePatientsDto>
