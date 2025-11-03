@@ -51,6 +51,12 @@ export default function DashboardPage() {
 
   return (
     <ProtectedLayout>
+      {/* Add a quick link to Logs */}
+      <div className="mb-4 flex justify-end">
+        <Link href="/logs">
+          <Button variant="outline">View Logs</Button>
+        </Link>
+      </div>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
