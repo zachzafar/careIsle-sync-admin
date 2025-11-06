@@ -66,6 +66,14 @@ const FacilityDto = z.object({
     .optional(),
   facilities_to_sync: z.array(z.string()).optional(),
   webhook_secret: z.string().optional(),
+  api_keys: z
+    .array(
+      z.object({
+        name: z.string(),
+        key: z.string(),
+      }),
+    )
+    .optional(),
 })
 
 // Patient DTOs
@@ -310,6 +318,42 @@ export const contract = c.router({
       summary: "Create Patient",
     },
   },
+  keys: {
+    create: {
+      method: "POST",
+      path: "/keys",
+      body: z.object({
+        facilityUniqueId: z.string(),
+        name: z.string().optional(),
+      }),
+      responses: {
+        201: z.object({
+          _id: z.string(),
+          key: z.string(),
+          name: z.string(),
+          facility_unique_id: z.string(),
+          active: z.boolean(),
+          createdAt: z.string(),
+          updatedAt: z.string(),
+        }),
+      },
+      summary: "Create API Key",
+    },
+    delete: {
+      method: "DELETE",
+      path: "/keys/:id",
+      pathParams: z.object({ id: z.string() }),
+      query: z.object({
+        facilityUniqueId: z.string(),
+      }),
+      responses: {
+        200: z.object({ deleted: z.boolean() }),
+        404: z.object({ message: z.string() }).optional(),
+      },
+      body: z.object({}), // allow passing an empty body to match usage
+      summary: "Delete API Key",
+    },
+  },
 })
 
 export type AuthResponse = z.infer<typeof AuthResponseDto>
@@ -319,4 +363,13 @@ export type CreatePatientType = z.infer<typeof CreatePatientDto>
 // Add exported types for new DTOs
 export type BulkUploadFromFacilityDtoType = z.infer<typeof BulkUploadFromFacilityDto>
 export type MergePatientsDtoType = z.infer<typeof MergePatientsDto>
+export type ApiKey = {
+  _id: string
+  key: string
+  name: string
+  facility_unique_id: string
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
 
