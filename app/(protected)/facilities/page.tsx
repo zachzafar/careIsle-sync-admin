@@ -152,7 +152,7 @@ export default function FacilitiesPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/facilities/${facility.id}`}>
+                          <Link href={`/facilities/${facility.unique_id || facility.id}`}>
                             <Eye className="h-4 w-4" />
                           </Link>
                         </Button>
