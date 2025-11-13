@@ -1,12 +1,14 @@
 "use server"
 
 import { cookies } from "next/headers"
+import mem from "mem"
 
 const REFRESH_TOKEN_COOKIE = "refreshToken"
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 days in seconds
 
 export async function setRefreshTokenCookie(refreshToken: string) {
   const cookieStore = await cookies()
+  console.log("setting refresh token cookie", refreshToken)
   cookieStore.set(REFRESH_TOKEN_COOKIE, refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -44,7 +46,7 @@ export async function refreshAccessTokenServer(): Promise<{
     const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
     const url = `${apiURL}/refresh`
-    const payload = { refreshToken }
+    const payload = { refresh: refreshToken }
     const requestHeaders = { "Content-Type": "application/json", "Accept": "application/json" }
 
     // Debug: log the outgoing request details
@@ -87,3 +89,4 @@ export async function refreshAccessTokenServer(): Promise<{
     return { success: false }
   }
 }
+

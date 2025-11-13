@@ -66,6 +66,14 @@ const FacilityDto = z.object({
     .optional(),
   facilities_to_sync: z.array(z.string()).optional(),
   webhook_secret: z.string().optional(),
+  api_keys: z
+    .array(
+      z.object({
+        name: z.string(),
+        key: z.string(),
+      }),
+    )
+    .optional(),
 })
 
 // Patient DTOs
@@ -101,7 +109,98 @@ const PatientDto = z.object({
   demographics: z.record(z.any()),
 })
 
+const PaginationMetaDto = z.object({
+  total: z.number().int().nonnegative(),
+  page: z.number().int().min(1),
+  limit: z.number().int().min(1).max(100),
+  totalPages: z.number().int().min(0),
+  hasNextPage: z.boolean(),
+  hasPrevPage: z.boolean(),
+  sort: z.enum(["createdAt", "updatedAt", "first_name", "last_name", "dob", "system_id"]),
+  order: z.enum(["asc", "desc"]),
+})
+
+// Top-level zod DTO additions
+const BulkUploadFromFacilityDto = z.object({
+  facility_id: z.string(),
+})
+
+const MergeInfoDto = z.object({
+  primary_patient_id: z.string(),
+  secondary_patient_ids: z.string(),
+})
+
+const MergePatientsDto = z.object({
+  merge_info: z.array(MergeInfoDto),
+})
+
+// API responses
+const BulkUploadResponseDto = z.object({
+  message: z.string(),
+  facilityId: z.string(),
+  status: z.enum(["processing"]),
+  startedAt: z.string(), // ISODateString
+})
+
+// Duplicates return a record keyed by syncable primary patient id, value is array of potential duplicate patients.
+// We reuse PatientDto.partial() to keep it flexible and avoid mismatches if backend adds fields.
+const DuplicatesResponseDto = z.record(z.array(PatientDto.partial()))
+
+const UpdateCanSyncDto = z.object({
+  facility_id: z.string(),
+  can_sync: z.boolean(),
+})
+
+const UpdateCanSyncResponseDto = z.object({
+  facility_id: z.string(),
+  can_sync: z.boolean(),
+  message: z.string().optional(),
+})
+
 export const contract = c.router({
+  ehr: {
+    bulkUploadFromFacility: {
+      method: "POST",
+      path: "/ehr/bulk-upload-from-facility",
+      body: BulkUploadFromFacilityDto,
+      responses: {
+        201: BulkUploadResponseDto,
+      },
+      summary: "Start bulk upload for a facility",
+    },
+    merge: {
+      method: "POST",
+      path: "/ehr/merge",
+      body: MergePatientsDto,
+      responses: {
+        // Backend returns a merge log; we model success/failed arrays using the MergeInfo shape for visibility.
+        201: z.object({
+          successful: z.array(MergeInfoDto),
+          failed: z.array(MergeInfoDto),
+        }),
+      },
+      summary: "Merge duplicate patients",
+    },
+    getDuplicates: {
+      method: "GET",
+      path: "/ehr/duplicates/:facility_id",
+      pathParams: z.object({ facility_id: z.string() }),
+      responses: {
+        200: DuplicatesResponseDto,
+      },
+      summary: "Get duplicate groups for a facility",
+    },
+    updateCanSync: {
+      method: "PUT",
+      path: "/ehr/update-can-sync",
+      body: UpdateCanSyncDto,
+      responses: {
+        200: UpdateCanSyncResponseDto,
+        // Backend may throw validation errors if duplicates exist; ts-rest will surface non-2xx statuses.
+      },
+      summary: "Update facility can_sync flag",
+    },
+  },
   auth: {
     login: {
       method: "POST",
@@ -193,8 +292,19 @@ export const contract = c.router({
     getAll: {
       method: "GET",
       path: "/patients",
+      // Accept pagination/sorting query params
+      query: z.object({
+        page: z.coerce.number().int().min(1).default(1),
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        sort: z.enum(["createdAt", "updatedAt", "first_name", "last_name", "dob", "system_id"]).default("createdAt"),
+        order: z.enum(["asc", "desc"]).default("desc"),
+      }),
       responses: {
-        200: z.array(PatientDto),
+        // Return data + meta per new contract
+        200: z.object({
+          data: z.array(PatientDto),
+          meta: PaginationMetaDto,
+        }),
       },
       summary: "Get All Patients",
     },
@@ -208,9 +318,58 @@ export const contract = c.router({
       summary: "Create Patient",
     },
   },
+  keys: {
+    create: {
+      method: "POST",
+      path: "/keys",
+      body: z.object({
+        facilityUniqueId: z.string(),
+        name: z.string().optional(),
+      }),
+      responses: {
+        201: z.object({
+          _id: z.string(),
+          key: z.string(),
+          name: z.string(),
+          facility_unique_id: z.string(),
+          active: z.boolean(),
+          createdAt: z.string(),
+          updatedAt: z.string(),
+        }),
+      },
+      summary: "Create API Key",
+    },
+    delete: {
+      method: "DELETE",
+      path: "/keys/:id",
+      pathParams: z.object({ id: z.string() }),
+      query: z.object({
+        facilityUniqueId: z.string(),
+      }),
+      responses: {
+        200: z.object({ deleted: z.boolean() }),
+        404: z.object({ message: z.string() }).optional(),
+      },
+      body: z.object({}), // allow passing an empty body to match usage
+      summary: "Delete API Key",
+    },
+  },
 })
 
 export type AuthResponse = z.infer<typeof AuthResponseDto>
 export type FacilityType = z.infer<typeof FacilityDto>
 export type PatientType = z.infer<typeof PatientDto>
 export type CreatePatientType = z.infer<typeof CreatePatientDto>
+// Add exported types for new DTOs
+export type BulkUploadFromFacilityDtoType = z.infer<typeof BulkUploadFromFacilityDto>
+export type MergePatientsDtoType = z.infer<typeof MergePatientsDto>
+export type ApiKey = {
+  _id: string
+  key: string
+  name: string
+  facility_unique_id: string
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+

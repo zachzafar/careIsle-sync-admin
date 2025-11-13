@@ -70,7 +70,7 @@ export default function FacilitiesPage() {
     },
   })
 
-  const facilities = data?.status === 200 ? data.body : []
+  const facilities = data?.body || []
 
   const filteredFacilities = facilities?.filter(
     (facility) =>
@@ -86,12 +86,20 @@ export default function FacilitiesPage() {
             <h1 className="text-3xl font-bold tracking-tight">Facilities</h1>
             <p className="text-muted-foreground mt-2">Manage healthcare facilities and EHR integrations</p>
           </div>
-          <Button asChild>
-            <Link href="/facilities/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Facility
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild>
+              <Link href="/facilities/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Facility
+              </Link>
+            </Button>
+            {/* Link to EHR bulk upload page */}
+            <Button variant="secondary" asChild>
+              <Link href="/patients/ehr-bulk-upload">
+                Bulk Upload
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
@@ -144,7 +152,7 @@ export default function FacilitiesPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/facilities/${facility.id}`}>
+                          <Link href={`/facilities/${facility.unique_id || facility.id}`}>
                             <Eye className="h-4 w-4" />
                           </Link>
                         </Button>

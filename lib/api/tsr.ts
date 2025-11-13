@@ -1,6 +1,6 @@
 import { initTsrReactQuery } from "@ts-rest/react-query/v5"
 import { contract } from "./contract"
-import { getAccessToken, refreshAccessToken } from "../auth/token"
+import { getAccessToken, refreshAccessToken, refreshAccessTokenSingleton } from "../auth/token"
 import axios, { AxiosError, AxiosResponse, isAxiosError, Method } from "axios"
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
@@ -39,7 +39,7 @@ axiosInstance.interceptors.response.use(
     if (error?.response?.status === 401 && config && !(config as any).sent) {
       ;(config as any).sent = true
       console.log("refreshing token")
-      const refreshed = await refreshAccessToken()
+      const refreshed = await refreshAccessTokenSingleton()
       if (!refreshed) {
         return Promise.reject(error)
       }

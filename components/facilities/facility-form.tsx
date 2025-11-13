@@ -98,6 +98,7 @@ export function FacilityForm({ facility, isEdit }: FacilityFormProps) {
       apiCredentials.client_secret = formData.client_secret
       apiCredentials.token_url = formData.token_url
       apiCredentials.refresh_token = formData.refresh_token
+      apiCredentials.api_key = formData.api_key
     } else if (formData.credentialType === "apikey") {
       apiCredentials.api_key = formData.api_key
     }
@@ -219,6 +220,15 @@ export function FacilityForm({ facility, isEdit }: FacilityFormProps) {
                   id="token_url"
                   value={formData.token_url}
                   onChange={(e) => setFormData({ ...formData, token_url: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="api_key">API Key</Label>
+                <Input
+                  id="api_key"
+                  type="password"
+                  value={formData.api_key}
+                  onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
